@@ -1,61 +1,110 @@
 <!DOCTYPE html>
-<!-- saved from url=(0086)file:///C:/Users/Amine/Google%20Drive/CTS/I3-Optique/2020-2021/Annimations/Prisme.html -->
+<!-- saved from url=(0088)https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/optiqueGeo/prisme/prisme.php -->
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<link rel="stylesheet" href="./Prisme_files/style.css" type="text/css" media="screen">
-<link rel="stylesheet" href="./Prisme_files/bleu.css" type="text/css" media="screen">
+<link rel="stylesheet" href="./Le Prisme_files/style.css" type="text/css" media="screen">
+<link rel="stylesheet" href="./Le Prisme_files/bleu.css" type="text/css" media="screen">
 
 <!--[if lt IE 9]>
 <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 <![endif]-->
 
-
-
+<meta name="author" content="Geneviève Tulloue">
+<meta name="copyright" content="© G.TULLOUE">
 <!--modifier la description (mots clés...)-->
 <meta name="description" content="prisme, réfraction, dispersion, couleurs, lumière blanche, spectre">
 <!--modifier le titre-->
 <title>Le Prisme</title>
 </head>
 <body onload="init()"><div class="container" id="conteneur">
-
+<header>
+  <section id="header-area"> <br>
+    <br>
+    <br>
+    <ul class="nav">
+      <li><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/index.php">Accueil</a></li>
+      <li><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/menu/menu_gene.php">Menu général</a></li>
+      <li><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/optiqueGeo/index.php"> Optique géométrique</a></li>
+      <li><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/optiqueGeo/prisme/index.php"> Prisme</a></li>
+      <li><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/fichiers/configuration.php">Mode d'emploi</a></li>
+      <li><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/fichiers/apropos.php">A propos</a></li>
+      <li><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/fichiers/recherche.php" target="_blank">Rechercher</a></li>
+    </ul>
+  </section>
+</header>
   <article class="anim">
     <h1>Le Prisme</h1>
     <!--ici l'animation-->
     <table>
       <tbody><tr>
         <td>
-        <script src="./Prisme_files/createjs.min.js.téléchargement"></script><script src="./Prisme_files/outils.js.téléchargement"></script><script src="./Prisme_files/prisme.js.téléchargement"></script><div id="animation" style="background-color: rgb(0, 0, 102);"><canvas id="testCanvas" width="800" height="560" style="background-color: rgb(0, 0, 102);"></canvas></div>        
+        <script src="./Le Prisme_files/createjs.min.js.téléchargement"></script><script src="./Le Prisme_files/outils.js.téléchargement"></script><script src="./Le Prisme_files/prisme.js.téléchargement"></script><div id="animation" style="background-color: rgb(0, 0, 102);"><canvas id="testCanvas" width="800" height="560" style="background-color: rgb(0, 0, 102); cursor: pointer;"></canvas></div>        
         </td>
       </tr>
     </tbody></table>
     <!--fin de l'animation--> 
   </article>
-  
+  <article class="commentaire">
+    <h2> Manipulons la figure... </h2>
+    <p class="conclusion">Le prisme est l'élément à la base de la spectroscopie par réfraction </p>
+    <p>Du point de vue optique, un prisme est un ensemble de deux dioptres plans non parallèles, faisant entre eux un angle Â.</p>
+    <p>Le prisme est éclairé en lumière parallèle par une fente, elle-même illuminée par une source lumineuse. </p>
+    <p>Chaque rayon lumineux entrant dans le prisme est (éventuellement) réfracté deux fois (voir l'animation du <a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/optiqueGeo/dioptres/dioptre_plan.php">dioptre plan</a>), et la déviation subie par la lumière dépend de l'indice de réfraction, fonction lui-même de la longueur d'onde, c'est le phénomène de<span class="rouge"> dispersion</span>. Ce phénomène est utilisé en spectroscopie pour analyser la composition spectrale d'une lumière.</p>
+    <p>La déviation par un prisme de petit angle est également utilisé en lunetterie pour corriger des défauts de parallélisme des deux yeux. Dans ce cas il faut que le verre soit peu dispersif.</p>
+    <h3>Mode d'emploi </h3>
+    <ul>
+      <li> il faut cliquer-glisser sur le prisme pour le faire tourner</li>
+      <li> le curseur bleu permet de changer l'angle du prisme</li>
+      <li>on peut choisir le type de lampe : monochromatique, spectrale ou blanche, avec les boutons. En mode "monochromatique", faire varier la longueur d'onde avec le curseur rouge</li>
+      <li> il faut cliquer sur le bouton "fond" pour changer la couleur du fond (clair ou foncé) </li>
+    </ul>
+    <p>Un graphe  permet de visualiser l'angle de déviation en fonction de l'angle d'incidence, pour une longueur d'onde donnée. Les valeurs numériques s'affichent dans un tableau.</p>
+    <p>On peut voir également le spectre de la lumière obtenu sur l'écran. L'indice de réfraction est modélisé par la formule de Cauchy :</p>
+    <p align="center"> <span class="formule">n = A + B/λ² </span></p>
+    <h3>Manipulation</h3>
+    <ul>
+      <li>En lumière monochromatique, faire tourner le prisme pour observer la déviation en fonction de l'angle d'incidence. Une croix rouge sur le graphe indique la position du prisme. On peut constater l'existence d'un minimum de déviation, pour lequel l'angle d'incidence est égal à l'angle d'émergence. </li>
+      <li>Faire varier l'angle du prisme et remarquer la déformation de la courbe de déviation. Pour que cette courbe soit "creuse", il faut un angle de prisme assez grand, mais pas trop pour qu'il y ait émergence du rayon lumineux. Rechercher dans quelles conditions (angle d'incidence), le rayon lumineux peut ressortir du prisme après avoir subi deux réfractions. </li>
+      <li>Faire varier la longueur d'onde (couleur) et remarquer également la déformation de la courbe, dûe à à la variation de l'indice de réfraction (dispersion). </li>
+      <li>En lumière polychromatique, on peut observer le spectre de la lumière.</li>
+      </ul>
+        
+            <p class="conclusion">De belles animations de spectres sont disponibles sur le site <a href="http://www.ostralo.net/" target="_blank">ostralo.net</a> : <a href="http://www.ostralo.net/3_animations/swf/spectres_soleil.swf" target="_blank">spectres d'émission des éléments et du Soleil</a>, <a href="http://www.ostralo.net/3_animations/swf/spectres_temperature.swf" target="_blank">spectre d'émission du corps noir.</a>
+  </p></article>
   <br>
   
   <!-- end .content -->
   
 <footer>
   <section id="footer-area">
-    
+    <aside class="footer-segment"><a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/fichiers/mail.php?anim=optiqueGeo/prisme/prisme.php" target="_blank"> <img src="./Le Prisme_files/Lettre.gif" alt="avez-vous des commentaires ?" align="top" border="0" height="20" width="32"> Contact</a> </aside>
     <!-- end of #first footer segment -->
-    <aside class="footer-segment" style="
-    height: 05px;
-"> 
+    <aside class="footer-segment"> <script language="JavaScript1.1">
+<!--
+hsh = new Date();
+hsd = document;
+hsi = '<a href="https://www.xiti.com/xiti.asp?s=81225"'
+hsi += ' TARGET="_top"><img width="39" height="25" border=0 '
+hsi += 'src="https://logv18.xiti.com/hit.xiti?s=81225'
+hsi += '&p=&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+if(parseFloat(navigator.appVersion)>=4)
+{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' +
+Xiti_s.colorDepth;}
+hsd.writeln(hsi + '&ref=' + hsd.referrer.replace('&', '$') + '" title="Mesurez votre audience"></a>');
+//-->
+</script><a href="https://www.xiti.com/xiti.asp?s=81225" target="_top"><img width="39" height="25" border="0" src="./Le Prisme_files/hit.xiti" title="Mesurez votre audience"></a>
 
-
-
-                 
+                 <noscript>
+                <a href="https://www.xiti.com/xiti.asp?s=81225" TARGET="_top"><img width="39" height="25"
+border=0 src="https://logv18.xiti.com/hit.xiti?s=81225&p=&" title="Mesurez votre
+audience"></a>
+                </noscript>
                 
                  </aside>
     <!-- end of #third footer segment --> 
     <!-- end of #second footer segment -->
     
-    <aside class="footer-segment"> <a style="
-    height: 44px;
-    width: 320px;
-">Centre des Techniques Spatiales Optique Géométrique
-- I3 - 2020/2021</a> </aside>
+    <aside class="footer-segment"> <a href="https://www.sciences.univ-nantes.fr/sites/genevieve_tulloue/optiqueGeo/prisme/prisme.php">© Geneviève Tulloue 2001-2021</a> </aside>
     <!-- end of #fourth footer segment --> 
     
   </section>

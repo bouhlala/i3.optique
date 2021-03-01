@@ -1,0 +1,759 @@
+var stage;
+		var Rd,sto,inf=true,cou='#ff3399',couL='#639AFF';
+		var filtre,faisceau=false,reflex=false,retour=false;
+		var angle=50,lambda,n,ech = 1.5,A,depart,alpha0,rotPrisme=50;
+		var Hg = ['#0FF', 407.8, 435.8, 468, 491.6, 495, 546, 577, 579.1, 624];
+		var Bl = [];
+		for (var l = 1; l<=30; l++) {
+			Bl[l] = 400+l*10;
+		}
+		Bl[0] = '#FFF';
+		var Mo = [];
+		
+		var max = 300,i1;
+		var rot,emerg,dtot = 0,O = new createjs.Point(0,0),O1 = new createjs.Point(-250,0);
+		var ang,lum,mPrisme=new createjs.Matrix2D()
+		
+		
+		function init() {
+			var canv = document.getElementById("testCanvas");
+			canv.width=800,canv.height=560;
+			var w=canv.width,h=canv.height;
+			canv.style.backgroundColor='#006'
+			canv.parentNode.style.backgroundColor=canv.style.backgroundColor;
+			var xmin=-w/2,xmax=w/2;
+            var centre=new createjs.Point(316,250);
+			stage = new createjs.Stage("testCanvas");
+			stage.enableMouseOver();
+			createjs.Touch.enable(stage)
+			
+			createjs.Ticker.timingMode = createjs.Ticker.RAF;
+			createjs.Ticker.addEventListener("tick", stage);
+		//////////////////////
+		
+		var txtEmploi='- cliquer-glisser sur le prisme pour le faire tourner\n- changer l\'angle du prisme avec le curseur bleu\- choisir le type de lampe : monochromatique, spectrale ou blanche, avec les boutons. En mode "monochromatique", choisir la longueur d\'onde avec le curseur rouge\n-  cliquer sur le bouton "fond" pour changer la couleur du fond (clair ou foncé)'
+		
+		var aide=new Aide(65,60,txtEmploi);
+		aide.x=20;
+		aide.y=20;
+		
+		//bouton plein écran
+		var btPE=new BoutonPleinEcran(canv).set({x:50,y:500})
+//			
+		lum=Mo
+		//systeme
+		var systeme = new createjs.Container();
+		positionne(systeme, centre)
+		
+		//axe
+		var axe=new createjs.Shape()
+		axe.graphics.s('DodgerBlue').sd([8, 4], 0).moveTo(0,0).lineTo(centre.x+w,0)
+		
+		//bouton du fond
+		var ssb = new createjs.SpriteSheetBuilder();
+		var frame0 = new createjs.Container()
+		var f0=new createjs.Shape(new createjs.Graphics().f('white').r(0,0,20,20));
+		var tx0=new createjs.Text('fond', "bold 14px Arial", 'white');
+		tx0.x=-7
+		tx0.y=26
+		frame0.addChild(tx0,f0)
+		var f1 = new createjs.Shape(new createjs.Graphics().f('#006').r(0,0,20,20));
+		var tx1=new createjs.Text('fond', "bold 14px Arial", '#006');
+		tx1.x=-7
+		tx1.y=26
+		var frame1=new createjs.Container()
+		frame1.addChild(tx1,f1)
+		var bounds = new createjs.Rectangle(-20,0,50,50);
+		ssb.addFrame(frame0, bounds);
+		ssb.addFrame(frame1, bounds);
+		var sS = ssb.build();
+		var btfond = new createjs.Sprite(sS);
+		btfond.gotoAndStop(0)
+		btfond.cursor = "pointer";
+		btfond.x=-180
+		btfond.y=250
+		
+		btfond.on("click",function(evt){
+			evt.target.gotoAndStop((evt.target.currentFrame+1)%2);
+				switch(evt.target.currentFrame){
+					case 0:
+				canv.style.backgroundColor='#006'
+				break
+				default:
+				canv.style.backgroundColor='#FFF'
+				
+				}
+				canv.parentNode.style.backgroundColor=canv.style.backgroundColor
+				stage.update();
+		})
+			
+		//curseur de longueur d'onde
+		var curlambda = new Curseur(400,700,100,550,'red');
+		curlambda.y = 60;
+		curlambda.x=-270;
+		curlambda.txt.y=12
+		lambda=curlambda.value
+		n=indice(lambda)
+		curlambda.txt.text='lambda = '+lambda.toFixed(0)+' nm'
+		Mo[0] = couleur(lambda);
+		Mo[1] = lambda;
+		curlambda.on("pressmove",function(evt) {
+			lambda=curlambda.value
+			n=indice(lambda)
+			this.txt.text='lambda = '+lambda.toFixed(0)+' nm'
+			txC1.color=couleur(lambda)
+			dessineLampe(couleur(lambda))
+			calcule()
+		})
+		
+		//curseur d'angle du prisme
+		var curang = new Curseur(10,90,100,50,'#06F');
+		curang.txt.y=12
+		curang.y = 193;
+		curang.x=-2;
+		angle=curang.value
+		curang.txt.text='angle prisme : '+angle.toFixed(2)+'°'
+		curang.on("pressmove",function(evt) {
+			angle=curang.value
+			this.txt.text='angle prisme : '+angle.toFixed(2)+'°'
+			dessinePrisme()
+			stage.update();
+			calcule()
+		})
+
+		//prisme
+		var prisme=new createjs.Container().setTransform(0,0,1,1,rotPrisme)
+		var L=180,h=40;
+		var pr=new createjs.Shape()
+		prisme.addChild(pr)
+		angle=curang.value
+		dessinePrisme()
+		function dessinePrisme(){
+			A = degtorad(angle);
+			pr.graphics.clear()
+			pr.graphics.f('skyBlue').moveTo(0,-h).lineTo(L*Math.sin(A), L*Math.cos(A)-h).lineTo(0, L-h).s('#AFE').lineTo(0, -h).ef().ss(4).s('#44A').moveTo(0,L-h).lineTo(L*Math.sin(A), L*Math.cos(A)-h)
+	
+		}
+		prisme.on('mousedown',function(evt){
+			alpha0=this.rotation
+			depart=radtodeg(Math.atan2(evt.stageY-centre.y,evt.stageX-centre.x))
+			})
+		prisme.on('pressmove',function(evt){
+			//angle de rotation du prisme
+			rotPrisme=radtodeg(Math.atan2(evt.stageY-centre.y,evt.stageX-centre.x))-depart+alpha0
+			if(rotPrisme>90){
+				rotPrisme=90
+			}
+			if(rotPrisme<-90){
+				rotPrisme=-90
+			}
+			this.rotation=rotPrisme
+			mPrisme.rotate(rotPrisme)
+			calcule()
+		})
+
+		
+		//bouton "monochromatique"
+		var bt1 = new Bouton("monochromatique", "#50A",120);
+		bt1.x=-282;
+		bt1.y =115;
+		bt1.on("click", function(){
+			lum=Mo
+			Mo[0] = couleur(lambda);
+			Mo[1] = lambda;
+			curlambda.visible=true
+			txC1.text='lumière monochromatique'
+			txC1.color=couleur(lambda)
+			dessineLampe(couleur(lambda))
+			calcule()}
+		)
+				
+		
+		//bouton "lampe spectrale"
+		var bt2 = new Bouton("lampe spectrale", "#50A",120);
+		bt2.x=bt1.x
+		bt2.y =152;
+		bt2.on("click", function(){
+			lum=Hg
+			curlambda.visible=false
+			txC1.text='lampe spectrale'
+			txC1.color='#0FF'	
+			dessineLampe('#0FF')
+			calcule()
+		})
+		
+		//bouton "lumière blanche"
+		var bt3 = new Bouton("lumière blanche", "#50A",120);
+		bt3.x=bt1.x
+		bt3.y =191;
+		bt3.on("click", function(){
+			lum=Bl
+			curlambda.visible=false
+			txC1.text='lumière blanche'
+			txC1.color='#FFF'	
+			dessineLampe('#FFF')
+			calcule()
+		})
+		
+		//collimeteur
+		var collim=new createjs.Container().set({x:-240})
+		var boite=new createjs.Shape()
+		var lampe=new createjs.Shape()
+		boite.graphics.s('grey').ss(3).mt(60,3).lt(60,20).lt(-20,20).lt(-20,-20).lt(60,-20).lt(60,-3)
+		var fl=dessineFleche(60,'red')
+		fl.setTransform(75, -30, 0.7, 0.7,115)
+		var fl1=dessineFleche(30,'DodgerBlue ')
+		fl1.setTransform(80,10,0.8,0.8,90)
+		var fl2=dessineFleche(30,'DodgerBlue ')
+		fl2.setTransform(80,-10,0.8,0.8,-90)
+		dessineLampe(couleur(lambda))
+		function dessineLampe(co){
+			lampe.graphics.clear()
+			lampe.graphics.f(co).drawCircle(0,0,15)
+		}
+		var txC=new createjs.Text('fente','12px Arial','red').set({x:76,y:-67})
+		var txC1=new createjs.Text('','14px Arial','red').set({x:20,y:30,textAlign:'center'})
+		txC1.text='lumière monochromatique'
+		txC1.color=couleur(lambda)
+		
+		
+		collim.addChild(boite,lampe,txC,fl,fl1,fl2,txC1)
+		
+		//affichage
+		var aff=new createjs.Container().set({x:-10,y:-220})
+		var cadre=new createjs.Shape()
+		cadre.graphics.ss(3).s('#039').f('#FDF').drawRoundRect(0,0,190,94,5)
+		var txtA1=new createjs.Text('indice :','12px Arial','blue').set({x:15,y:10})
+		var txtA2=new createjs.Text('angle d\'incidence :','12px Arial','blue').set({x:15,y:30})
+		var txtA3=new createjs.Text('angle d\'émergence :','12px Arial','blue').set({x:15,y:50})
+		var txtA4=new createjs.Text('déviation :','12px Arial','blue').set({x:15,y:70})
+		aff.addChild(cadre,txtA1,txtA2,txtA3,txtA4)
+		
+		//écran et spectre
+		var ecran=new createjs.Container().set({x:302,y:60})
+		//ecran.scaleX=-1
+		var contour=new createjs.Shape()
+		contour.graphics.ss(3).s('#999').drawRect(-80,-40,140,80)
+		var txtE=new createjs.Text('écran','bold 16px Arial','#999')
+		txtE.textAlign='center'
+		txtE.setTransform(-10,43)
+		var spe=new createjs.Shape()
+		
+		ecran.addChild(contour,txtE,spe)
+		
+		//spectre
+		var spectre=new createjs.Shape()
+		
+		//2ème ecran
+		var ecran1=new createjs.Container().setTransform(240,0,1,1,-90)
+		var profil=new createjs.Shape()
+		profil.graphics.ss(4).s('#CCC').mt(-80,0).lt(60,0)
+		var txtE1=new createjs.Text('écran        spectre','bold 14px Arial','#999').set({x:-10,y:5,textAlign:'center'})
+		var flE=dessineFleche(20,'#CCC')
+		flE.setTransform(-20,12,0.8,0.8)
+		ecran1.addChild(profil,txtE1,flE)
+		
+		//graphe
+		var graphe=new createjs.Container().set({x:220,y:-40})
+		
+		var txG1=new createjs.Text('Déviation (°)','13px Arial','DodgerBlue').set({x:5,y:-184})
+		var txG2=new createjs.Text('Incidence (°)','13px Arial','DodgerBlue').set({x:155,y:10})
+		var txG3=new createjs.Text('10','13px Arial','DodgerBlue').set({x:-28,y:-20})
+		var txG4=new createjs.Text('90','13px Arial','DodgerBlue').set({x:-28,y:-140})
+		var txG5=new createjs.Text('10','13px Arial','DodgerBlue').set({x:8,y:10})
+		var txG6=new createjs.Text('90','13px Arial','DodgerBlue').set({x:128,y:10})
+		var txG7=new createjs.Text('réflexion totale','13px Arial','red').set({x:30,y:-115})
+		var lignes=new createjs.Shape()
+		lignes.graphics.s('DodgerBlue').mt(-110,0).lt(160,0).mt(0,20).lt(0,-160).mt(-5,-15).lt(5,-15).mt(-5,-135).lt(5,-135).mt(15,-5).lt(15,5).mt(135,-5).lt(135,5)
+		var axe1=dessineFleche(0,'DodgerBlue').set({x:160})
+		var axe2=dessineFleche(0,'DodgerBlue')
+		axe2.setTransform(0,-160,1,1,-90)
+		var pt=new createjs.Shape()
+		pt.graphics.ss(2).s('red').mt(-5,0).lt(5,0).mt(0,-5).lt(0,5)
+		pt.setTransform(134,-70)
+		var lignes1=new createjs.Shape()
+		var graph=new createjs.Shape()
+		
+		graphe.addChild(axe1,axe2,txG1,txG2,txG3,txG4,txG5,txG6,txG7,lignes,lignes1,graph,pt)
+		
+		//arcs
+		var arcs=new createjs.Container()
+		var sArcs1=new createjs.Shape()
+		var sArcs2=new createjs.Shape()
+		var txAr1=new createjs.Text('Incidence','12px Arial','red')
+		var txAr2=new createjs.Text('Déviation','12px Arial','red')
+		arcs.addChild(sArcs1,sArcs2,txAr1,txAr2)
+		
+		//signature
+		var signature=signer('08/2018',couL).set({x:390,y:240})
+		
+		
+		
+		var txtTest=new createjs.Text('toto', "bold 14px Arial", cou).set({x:-130,y:-180});
+		
+		stage.addChild(systeme,aide,btPE)
+
+		systeme.addChild(axe,graphe,collim,prisme,aff,curlambda,curang,bt1,bt2,bt3,spectre,arcs,ecran,ecran1,btfond,signature)
+		stage.update()
+			
+			calcule()
+			
+
+			
+function calcule(){
+	
+	spectre.graphics.clear()
+	spe.graphics.clear()
+	lignes1.graphics.clear()
+	graph.graphics.clear()
+	sArcs1.graphics.clear()
+	sArcs2.graphics.clear()
+	aff.visible=graphe.visible=(lum==Mo)
+	var coul=couleur(curlambda.value)
+	n = indice(lambda);
+	
+	//angle du prisme, en degrés
+	ang = degtorad(angle);
+	rot = rotPrisme;
+//	//angle d'incidence (rad)  
+	i1 = degtorad(rotPrisme);
+//	//sommets du prisme
+	var A = new createjs.Point(0,-h);
+	var B = new createjs.Point(0, L-h);
+	var C = new createjs.Point(L*Math.sin(ang), L*Math.cos(ang)-h);
+	
+	var AA = rotation(A, i1);
+	var BB = rotation(B, i1);
+	var CC = rotation(C, i1);
+	
+	var nb = lum.length-1;
+	//rayons
+	
+	var dmin = deviation(i1, ang, indice(lum[nb]));
+	var dmoy = deviation(i1, ang, indice(550))
+	var nb = lum.length-1;
+	if(lum==Mo){
+		lambda=curlambda.value
+		Mo[0] = couleur(lambda);
+		Mo[1] = lambda;
+	}
+	dessineLampe(lum[0])	
+	for (var k = nb; k>0; k--) {
+		//for (var k = 1; k<=nb; k++) {
+		lambda = lum[k];
+		n = indice(lambda);
+		co = couleur(lambda);
+		var r1 = Math.asin(Math.sin(i1)/n);
+		var r2 = ang-r1;
+		var i2 = Math.asin(n*Math.sin(r2));
+		emerg = !isNaN(i2);
+		txG7.visible=!emerg
+		pt.visible = emerg;
+		//1ère déviation
+		var d1 = i1-r1;
+		//déviation totale
+		var dtot = i1+i2-ang;
+		//si réflexion totale
+		var dr = i1+r1+Math.PI-2*ang;
+		//point d'émergence : J
+		var toto = new createjs.Point(max*Math.cos(d1), max*Math.sin(d1))
+		var J = inter(AA, CC, O, toto);
+ 		//point final avec émergence
+		var ptf = new createjs.Point(J.x+max*Math.cos(dtot), J.y+max*Math.sin(dtot));
+		//point final avec réflexion totale
+		var ptf1 =new createjs.Point(J.x+max*Math.cos(dr), J.y+max*Math.sin(dr));
+		//point final au minimum de déviation
+		var ptflim =new createjs.Point(J.x+max*Math.cos(dmin), J.y+max*Math.sin(dmin));
+		//intersection du rayon incident et du rayon émergent
+		var O3 = inter(O1, O, J, ptf);
+		//angle limite, en degrés
+		var ilim = radtodeg(Math.asin(n*Math.sin(ang-Math.asin(1/n))));
+		//déviation limite, en degrés
+		var dlim = ilim+90-angle;
+		
+		//rotation de l'écran
+		var rotec = dmoy
+		//début du rayon lumineux
+		spectre.graphics.ss(2).s(lum[0]).mt(O1.x,O1.y).lt(O.x,O.y)
+		sArcs1.graphics.s('DodgerBlue').mt(0,0).lt(-50*Math.cos(i1),-50*Math.sin(i1))
+		sArcs1.graphics.s(co).mt(-30,0).arc(0, 0, 30, Math.PI, Math.PI+i1,i1>0?false:true)
+				
+		//S'il y a émergence par la face AC
+		if (J.tst) {
+			spectre.graphics.ss(2).s(lum[0]).mt(O.x,O.y).lt(J.x,J.y)
+			
+		} else {
+			var titi=inter(BB, CC, O, toto)
+			spectre.graphics.ss(2).s(co).mt(O.x,O.y).lt(titi.x,titi.y);
+		}
+		
+			spectre.graphics.ss(2).s(co);
+			if (J.tst) {
+				spectre.graphics.mt(0,0).lt(J.x,J.y)
+				if (emerg) {
+					if (lum==Bl) {
+					spectre.graphics.ss(3).s(co).mt(J.x,J.y).lt(ptf.x,ptf.y)
+					spe.graphics.ss(5).s(co).mt((dmoy-dtot)*(max), -20).lt((dmoy-dtot)*(max), 20)
+					} else {
+						spectre.graphics.ss(2).s(co).mt(J.x,J.y).lt(ptf.x,ptf.y)
+						spe.graphics.ss(2).s(co).mt((dmoy-dtot)*(max), -20).lt((dmoy-dtot)*(max), 20)
+					}
+					if(!isNaN(dmoy)){
+					ecran1.setTransform(J.x+max*Math.cos(dmoy),J.y+max*Math.sin(dmoy),1,1,-90+radtodeg(dmoy));
+					}
+				} else {
+					var ptf2 = inter(BB, CC, J, ptf1);
+					if (ptf2.tst) {
+						spectre.graphics.ss(2).s(co).mt(J.x,J.y).lt(ptf2.x,ptf2.y)
+					} else {
+						var tutu=inter(BB, AA, J, ptf1);
+						spectre.graphics.ss(2).s(co).lt(tutu.x,tutu.y)
+					}
+				}
+				//dessin des angles d'incidence t de déviation
+				arcs.visible = (lum==Mo);
+				txAr2.visible=sArcs2.visible=emerg
+				txAr1.color=txAr2.color=co
+				txAr1.setTransform(-50*Math.cos(i1/2)-40,-50*Math.sin(i1/2));
+				txAr2.setTransform(50*Math.cos(dtot/2)+20,50*Math.sin(dtot/2));
+				
+				
+				sArcs2.graphics.s(co).mt(O3.x+45,0).arc(O3.x,O3.y,45, 0, dtot).mt(O3.x+50,0).arc(O3.x,O3.y, 50, 0, dtot)
+					} else {
+						var tata=inter(BB, CC, O, toto)
+						var tonton=inter(BB, CC, O, toto)
+						spectre.graphics.ss(2).s(co).lt(tata.x,tata.y).lt(tonton.x,tonton.y)
+					}
+				}
+		//position de la croix
+		pt.x = ech*radtodeg(i1);
+		pt.y = -ech*radtodeg(dtot);
+		//lignes qu rejoignent la crois
+		lignes1.graphics.clear();
+		lignes1.graphics.ss(1).sd([6,3],0).s('#AAA').mt(0,pt.y).lt(pt.x,pt.y).lt(pt.x,0)
+		//courbe de déviation
+		graph.graphics.ss(2).s(co).mt(ech*90, -ech*dlim);
+		for (var k=90; k>ilim; k--) {
+			var i1i = degtorad(k);
+			var devi = deviation(i1i, degtorad(angle), n);
+			graph.graphics.lt(ech*k, -ech*radtodeg(devi));
+		}
+		//affichage
+			txtA1.text = "indice : "+n.toFixed(3);
+			txtA2.text = "angle d'incidence : "+rot.toFixed(2)+"°";
+			if (emerg) {
+				txtA3.text = "angle d'émergence : "+radtodeg(i2).toFixed(2)+"°";
+				txtA4.text = "déviation : "+radtodeg(dtot).toFixed(2)+"°";
+			} else {
+				txtA3.text = "pas de rayon émergent";
+				txtA4.text = "";
+			}
+	stage.update()
+}
+	
+	
+	
+function refract(rayon,inci,norm,ind){
+	reflex=false
+	var dr=new Droite();
+	var u1=rayon.unit();
+	norm.normalize(1);
+	var tang=new createjs.Point(norm.y,- norm.x);
+	var sini=Math.sin(Math.atan(tangente(u1,norm)));
+	var sinr=sini/ind;
+
+	//s'il y a réfraction
+	if (Math.abs(sinr)<=1) {
+		reflex=false;
+		var cosr=Math.cos(Math.asin(sinr));
+		tang.normalize(-sinr);
+		norm.normalize(-cosr);
+	}
+	else {
+		reflex=true;
+		norm.normalize(-1);
+	}
+	var u2=tang.add(norm);
+	dr.P=inci;
+	dr.ang=Math.atan2(u2.y,u2.x);
+	//if(Math.abs(inci.y)>h){
+//		dr.P=inci
+//		dr.ang=rayon.ang
+//	}
+	return dr;
+	
+}
+
+
+	
+		
+}
+//
+//fonctions
+function signer(date,cou){
+			var sig = new createjs.Text('GT '+date, "bold 16px Arial",cou )
+			sig.lineWidth=50
+			sig.textAlign = "center";
+			return sig
+}
+function dessineFleche(lon,co){
+	var cont=new createjs.Container()
+	var trait=new createjs.Shape()
+	trait.graphics.s(co).ss(2).moveTo(-lon/2,0).lineTo(lon/2,0);
+	var fl=new createjs.Shape().set({x:lon/2})
+	fl.graphics.f(co).s(co).ss(2).p("AgEAFIAEgFIgxgxIBjAxIhjAyg");
+	cont.addChild(trait,fl)
+	return cont
+}
+function rampe (x, debut, fin, valdeb, valfin) {
+	if (x<debut) {
+		return valdeb;
+	}
+	if (x>fin) {
+		return valfin;
+	} else {
+		var pente = (valfin-valdeb)/(fin-debut);
+		return (valdeb+(x-debut)*pente);
+	}
+};
+function couleur(lambda) {
+				var c_roug = (rampe(lambda, 380, 430, 0, 0.5)*rampe(lambda, 430, 450, 0.5, 0)+rampe(lambda, 530, 580, 0, 1)*rampe(lambda, 650, 750, 1, 0))*255;
+		var c_vert = (rampe(lambda, 460, 500, 0, 1)*rampe(lambda, 570, 670, 1, 0))*255;
+		var c_bleu = (rampe(lambda, 380, 480, 0, 1)*rampe(lambda, 500, 560, 1, 0))*255;
+		return('rgb('+c_roug+','+c_vert+','+c_bleu+')')
+};
+function indice(lambda) {
+	return 1.682+13960/lambda/lambda;
+	//return 1.596+9330/lambda/lambda;
+}
+
+
+
+
+
+function inter (A, B, C, D) {
+	var al = ((B.y-D.y)/(C.y-D.y)-(B.x-D.x)/(C.x-D.x))/((A.x-B.x)/(C.x-D.x)-(A.y-B.y)/(C.y-D.y));
+	var qx = A.x*al+B.x*(1-al);
+	var qy = A.y*al+B.y*(1-al);
+	var tst = (al>=0 && al<=1);
+	return {x:qx, y:qy, test:al, tst:tst};
+}
+function sinus(P1,P2){
+	return (P1.x*P2.y-P1.y*P2.x)/P1.length/P2.length;
+}
+function cosinus(P1,P2){
+	return (P1.x*P2.x+P1.y*P2.y)/P1.length/P2.length;
+}
+function tangente(P1,P2) {
+	return (P1.x*P2.y-P1.y*P2.x)/(P1.x*P2.x+P1.y*P2.y);
+}
+
+
+
+function deviation(inc, ang, n) {
+	var ref = Math.asin(Math.sin(inc)/n);
+	var ref1 = ang-ref;
+	var inc1 = Math.asin(n*Math.sin(ref1));
+	var d = inc+inc1-ang;
+	return d;
+}
+
+function indice(lam) {
+	return 1.682+13960/lam/lam;
+	//return 1.596+9330/lambda/lambda;
+}
+function degtorad(a){
+	return a*Math.PI/180
+}
+function radtodeg(a){
+	return a*180/Math.PI
+}
+
+function positionne(ob,pt){
+	ob.x=pt.x
+	ob.y=pt.y
+}
+function rotation (point, a) {
+		var cos = Math.cos(a);
+		var sin = Math.sin(a);
+		return new createjs.Point(point.x*cos-point.y*sin, point.x*sin+point.y*cos);
+};
+function deviation(inc, ang, n) {
+	var ref = Math.asin(Math.sin(inc)/n);
+	var ref1 = ang-ref;
+	var inc1 = Math.asin(n*Math.sin(ref1));
+	var d = inc+inc1-ang;
+	return d;
+}
+/////////////objets///////////
+(function() {
+
+function Curseur(min,max,lon,valeur,cou) {
+	this.Container_constructor();
+	
+	this.min=min;
+	this.max=max;
+	this.lon=lon;
+	this.valeur=valeur;
+	this.cou=cou;
+	
+	this.coef=this.lon/(this.max-this.min)
+	
+	this.setup();
+}
+	var p = createjs.extend(Curseur, createjs.Container);
+	p.setup = function() {
+	var r=5,cx
+	var txt = new createjs.Text('', "bold 14px Arial", this.cou);
+	txt.textAlign = "center";
+	txt.y = -25;
+	txt.x=this.lon/2;
+	this.txt=txt
+	
+	var ligne = new createjs.Shape();
+	this.ligne=ligne
+	ligne.graphics.beginStroke(this.cou).moveTo(0, 0).lineTo(this.lon, 0);
+	
+	var circle = new createjs.Shape();
+	this.circle=circle
+	circle.name='circle'
+	circle.x=(this.valeur-this.min)*this.coef;
+	circle.graphics.beginRadialGradientFill(["#FFF",this.cou], [0, 1], 3, 2, 0, 0, 0, r).drawCircle(0, 0, r);
+	
+	this.addChild(ligne, txt, circle);
+	this.on("pressmove",function(evt) {
+		if(evt.target.name=='circle'){
+			cx=evt.localX
+			cx=cx<0?0:cx
+			cx=cx>this.lon?this.lon:cx
+			evt.target.x = cx
+			this.valeur=cx/this.coef+this.min;
+		}
+		stage.update();   
+	})
+	Object.defineProperty(this, "value", {
+  get: function() { return this.circle.x/this.coef+this.min},
+  set: function(y) { this.circle.x=this.coef*(y-this.min)}
+})
+	circle.cursor = "pointer";
+	
+} ;
+window.Curseur = createjs.promote(Curseur, "Container");
+//stage.update(); 
+}());
+(function() {
+
+function Button(label, color,width) {
+	this.Container_constructor();
+	this.color = color;
+	this.label = label;
+	this.width=width;
+	this.setup();
+}
+var p = createjs.extend(Button, createjs.Container);
+
+
+p.setup = function() {
+	var text = new createjs.Text(this.label, "bold 14px Arial", "#FFF");
+	this.text=text
+	text.textBaseline = "top";
+	text.textAlign = "center";
+	width=(this.width==undefined?100:this.width)
+	
+	var height=20;
+	
+	text.x = width/2;
+	text.y = -height*0.3;
+	var w=text.getMeasuredWidth();
+	text.scaleX=w>width?width/w:1;
+	
+	var background = new createjs.Shape();
+	this.background=background;
+	//background.graphics.beginFill(this.color).drawRoundRect(0,0,width,height,10);
+	background.graphics.setStrokeStyle(2).beginStroke(this.color).beginLinearGradientFill(["#FFF",this.color], [0, 1], 0, -height*0.7, 0, height*0.5).drawRoundRect(0,-height*0.5,width,height,5);
+	this.addChild(background, text); 
+	this.on("click", this.handleClick);
+	this.on("rollover", this.handleRollOver);
+	this.on("rollout", this.handleRollOver);
+	this.cursor = "pointer";
+
+	this.mouseChildren = false;
+	
+	//this.offset = Math.random()*10;
+//	this.count = 0;
+} ;
+
+p.handleClick = function (event) {
+	//alert("You clicked on a button: "+this.label);
+} ;
+
+p.handleRollOver = function(event) {   
+	this.background.scaleY=event.type == "rollover" ? -1 : 1;
+	stage.update()
+};
+
+window.Bouton = createjs.promote(Button, "Container");
+}());
+(function() {
+
+function Aide(posx,posy,txt,largeur) {
+	this.Container_constructor();
+	this.posx=posx;
+	this.posy=posy;
+	this.txt=txt
+	this.largeur=largeur;
+	this.setup();
+	
+}
+
+var p = createjs.extend(Aide, createjs.Container);
+
+p.setup = function() {
+	if(this.largeur==undefined){
+		this.largeur=500
+	}
+	//dessin de la main
+	var rond = new createjs.Shape();
+	rond.graphics.ss(3).s("#06F").rf(["#FFF", "#99F"], [0, 1], 0, 0, 0, 0, 0, 20)
+	.drawCircle(0, 0, 20).f("#0000CC").s().p("Ag7CFIAAgTIgOgRQgOgZgEgnIABgVIggg3QgIgOAAgIQAAgJAFgGQAGgFAIAAQAMAAAKARIAYAwIgShCQgFgOAAgFQABgLAFgGQAGgGAKAAQARAAAGAZIAOBFIAAhOQAAgPAGgIQAFgIAMAAQAKAAAGAJQAGAJAAAQIgCBPIAOg+QAKgeARAAQAJAAAGAEQAEAGAAAJQAAAJgDALIgUBSIACAOQABgCAIgEQAIgKAJgHQAJgGALAAQAMAAAPANIAFAEIgmAmIgfAqQgUATgOAIIAAAaQgYAKgUAAQgUAAgXgLgAhyhEQAAAAAAAAQgBAAAAABQAAAAAAAAQAAABAAABQAAADAHAQIAjA2IgDAYQAGAjALAXIAQATIAAAPQANAEAQAAQAOAAANgEIAAgXQAZgTAOgNIAcgnIAfgcQgFgCgHgBQgGABgHADQgGAFgHAMQgMADgNAHIgKgGQgBgOgDgLIAVhSQAEgLAAgGIgBgFQAAAAgBgBQAAAAAAAAQgBAAAAAAQAAgBgBAAQgFAAgFAQIgaBNIgUAAIABhXIAAgHQABgLgCgEQgCgEgDgBQgDABgCACQgCADgBAGIAAAMIAABZIgTADIgWhSQgFgSgGAAQgBAAgBAAQAAAAgBAAQAAAAgBAAQAAABgBAAIgBAGIACAMIAZBZIgSAGIgng9QgGgLgDAAQgBAAAAABQgBAAAAAAQAAAAgBAAQAAAAAAABg")
+	rond.x=20;
+	rond.y=20;
+
+//texte d'aide, avec son fond
+	var contTexte=new createjs.Container()
+	contTexte.visible=false
+	
+	var txtAide=new createjs.Text(this.txt, "11px Arial", '#006')
+		txtAide.lineWidth = this.largeur;
+		txtAide.lineHeight = 18;
+		txtAide.textBaseline = "top";
+		txtAide.textAlign = "left";
+		txtAide.x=this.posx
+		txtAide.y=this.posy
+		//this.txtAide=txtAide;
+		var bounds = txtAide.getBounds();
+		this.bounds=bounds
+		var pad = 10;
+		var fondTexte=new createjs.Shape()
+		fondTexte.graphics.setStrokeStyle(2).beginStroke('#039').beginFill('#D1E2F5').drawRoundRect(this.posx - pad + bounds.x, this.posy - pad + bounds.y, bounds.width + pad * 2, bounds.height + pad * 2,5)
+	
+	contTexte.addChild(fondTexte,txtAide)
+	this.addChild(rond,contTexte)
+	
+	//this.on("click", this.handleClick);
+	this.on("rollover", function(event) {  
+		contTexte.visible=true;
+	});
+	
+	this.on("rollout", function(event) {  
+		contTexte.visible=false; 
+	});
+	this.cursor = "pointer";
+//
+	
+};
+
+window.Aide = createjs.promote(Aide, "Container");
+}());
+
+
